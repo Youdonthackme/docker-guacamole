@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  # The unified Guacamole frontend + backend proxy
+  guacamole:
+    image: oznu/guacamole:latest
+    container_name: guacamole
+    restart: always
+    ports:
+      - "8080:8080" # Accessible locally or via your host's Tailscale IP (http://<host-tailscale-ip>:8080/guacamole/)
+    volumes:
+      - ./guasmare-config:/config
+    environment:
+      - EXTENSIONS=auth-remote-user # Optional: For advanced authentication
+    depends_on:
+      - guac-db
+
+  # Database to store your RDP connection configurations and login credentials
+  guac-db:
+    image: postgres:15-alpine
+    container_name: guacamole-db
+    restart: always
+    environment:
+      - POSTGRES_DB=guacamole_db
+      - POSTGRES_USER=guacamole_user
+      - POSTGRES_PASSWORD=ChooseYourSecurePasswordHere
+    volumes:
+      - ./guac-db-data:/var/lib/postgresql/data
+      
