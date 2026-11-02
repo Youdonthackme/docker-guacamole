@@ -1,29 +1,25 @@
-version: '3.8'
+name: Deploy Tailscale Guacamole RDP
 
-services:
-  # The unified Guacamole frontend + backend proxy
-  guacamole:
-    image: oznu/guacamole:latest
-    container_name: guacamole
-    restart: always
-    ports:
-      - "8080:8080" # Accessible locally or via your host's Tailscale IP (http://<host-tailscale-ip>:8080/guacamole/)
-    volumes:
-      - ./guasmare-config:/config
-    environment:
-      - EXTENSIONS=auth-remote-user # Optional: For advanced authentication
-    depends_on:
-      - guac-db
+on:
+  push:
+    branches:
+      - main  # Triggers the deployment when you push to the main branch
 
-  # Database to store your RDP connection configurations and login credentials
-  guac-db:
-    image: postgres:15-alpine
-    container_name: guacamole-db
-    restart: always
-    environment:
-      - POSTGRES_DB=guacamole_db
-      - POSTGRES_USER=guacamole_user
-      - POSTGRES_PASSWORD=ChooseYourSecurePasswordHere
-    volumes:
-      - ./guac-db-data:/var/lib/postgresql/data
-      
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}         # Your server's IP address
+          username: ${{ secrets.SERVER_USER }}     # Your SSH username (e.g., ubuntu)
+          key: ${{ secrets.SERVER_SSH_KEY }}       # Your private SSH Key
+          script: |
+            cd /path/to/your/docker-compose-folder
+            git pull origin main
+            docker compose up -d --remove-orphans
+            
